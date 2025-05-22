@@ -1,0 +1,72 @@
+import numpy as np
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score
+from collections import Counter
+import matplotlib.pyplot as plt
+
+df = load_breast_cancer()
+df
+
+x = df.data
+y = df.target
+feature_names = df.feature_names
+target_names = df.target_names
+
+x
+
+y
+
+feature_names
+
+target_names
+
+def calculate_entropy(labels):
+    total = len(labels)
+    counts = Counter(labels)
+    entropy = 0.0
+    for count in counts.values():
+        p = count/total
+        entropy -= p*np.log2(p)
+    return entropy
+
+
+  entropy_of_the_dataset = calculate_entropy(y)
+print(f"Entropy of the dataset : {entropy_of_the_dataset:.4f}")
+
+for i, features in enumerate(feature_names):
+    feature_values = x[:,i]
+    median_value = np.median(feature_values)
+
+    left_mask = feature_values <= median_value
+    right_mask = feature_values >= median_value
+
+    y_left = y[left_mask]
+    y_right = y[right_mask]
+
+    left_entropy = calculate_entropy(y_left)
+    right_entropy = calculate_entropy(y_right)
+
+    weighted_entropy = (((len(y_left))/len(y))*left_entropy)+((len(y_right)/len(y))*right_entropy)
+
+    info_gain = entropy_of_the_dataset - weighted_entropy
+
+    print(f"Information Gain for the {features} : {info_gain:.4f}")
+
+    x_train, x_test, y_train, y_test = train_test_split(x,y,test_size = 0.2, random_state = 42)
+
+    model = DecisionTreeClassifier(criterion = 'entropy', max_depth = 4, random_state = 42)
+
+    model.fit(x_train, y_train)
+
+    y_pred = model.predict(x_test)
+
+    feature_names = list(feature_names)
+target_names = list(target_names)
+
+plt.figure(figsize = (15,10))
+plot_tree(model, feature_names = feature_names, class_names = target_names, rounded = True, filled = True)
+plt.title("Visualization of a Decision Tree")
+plt.show()
